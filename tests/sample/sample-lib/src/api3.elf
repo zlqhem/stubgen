@@ -1,0 +1,187 @@
+Contents of the .debug_info section:
+
+  Compilation Unit @ offset 0x0:
+   Length:        0x64 (32-bit)
+   Version:       4
+   Abbrev Offset: 0x0
+   Pointer Size:  8
+ <0><b>: Abbrev Number: 1 (DW_TAG_compile_unit)
+    <c>   DW_AT_producer    : (indirect string, offset: 0x10): GNU C 4.8.2 -mtune=generic -march=x86-64 -g -fPIC -fstack-protector	
+    <10>   DW_AT_language    : 1	(ANSI C)
+    <11>   DW_AT_name        : (indirect string, offset: 0x0): src/api3.c	
+    <15>   DW_AT_comp_dir    : (indirect string, offset: 0x59): /home/junhee.cho/work/stubgen/test/sample-lib	
+    <19>   DW_AT_low_pc      : 0x0	
+    <21>   DW_AT_high_pc     : 0x19	
+    <29>   DW_AT_stmt_list   : 0x0	
+ <1><2d>: Abbrev Number: 2 (DW_TAG_base_type)
+    <2e>   DW_AT_byte_size   : 4	
+    <2f>   DW_AT_encoding    : 5	(signed)
+    <30>   DW_AT_name        : int	
+ <1><34>: Abbrev Number: 3 (DW_TAG_subprogram)
+    <35>   DW_AT_external    : 1	
+    <35>   DW_AT_name        : (indirect string, offset: 0xb): api3	
+    <39>   DW_AT_decl_file   : 1	
+    <3a>   DW_AT_decl_line   : 3	
+    <3b>   DW_AT_prototyped  : 1	
+    <3b>   DW_AT_low_pc      : 0x0	
+    <43>   DW_AT_high_pc     : 0x19	
+    <4b>   DW_AT_frame_base  : 1 byte block: 9c 	(DW_OP_call_frame_cfa)
+    <4d>   DW_AT_GNU_all_tail_call_sites: 1	
+ <2><4d>: Abbrev Number: 4 (DW_TAG_formal_parameter)
+    <4e>   DW_AT_name        : x	
+    <50>   DW_AT_decl_file   : 1	
+    <51>   DW_AT_decl_line   : 3	
+    <52>   DW_AT_type        : <0x2d>	
+    <56>   DW_AT_location    : 2 byte block: 91 6c 	(DW_OP_fbreg: -20)
+ <2><59>: Abbrev Number: 5 (DW_TAG_subprogram)
+    <5a>   DW_AT_external    : 1	
+    <5a>   DW_AT_name        : (indirect string, offset: 0x54): puts	
+    <5e>   DW_AT_decl_file   : 2	
+    <5f>   DW_AT_decl_line   : 0	
+    <60>   DW_AT_type        : <0x2d>	
+    <64>   DW_AT_declaration : 1	
+ <3><64>: Abbrev Number: 6 (DW_TAG_unspecified_parameters)
+ <3><65>: Abbrev Number: 0
+ <2><66>: Abbrev Number: 0
+ <1><67>: Abbrev Number: 0
+
+Contents of the .debug_abbrev section:
+
+  Number TAG (0x0)
+   1      DW_TAG_compile_unit    [has children]
+    DW_AT_producer     DW_FORM_strp
+    DW_AT_language     DW_FORM_data1
+    DW_AT_name         DW_FORM_strp
+    DW_AT_comp_dir     DW_FORM_strp
+    DW_AT_low_pc       DW_FORM_addr
+    DW_AT_high_pc      DW_FORM_data8
+    DW_AT_stmt_list    DW_FORM_sec_offset
+    DW_AT value: 0     DW_FORM value: 0
+   2      DW_TAG_base_type    [no children]
+    DW_AT_byte_size    DW_FORM_data1
+    DW_AT_encoding     DW_FORM_data1
+    DW_AT_name         DW_FORM_string
+    DW_AT value: 0     DW_FORM value: 0
+   3      DW_TAG_subprogram    [has children]
+    DW_AT_external     DW_FORM_flag_present
+    DW_AT_name         DW_FORM_strp
+    DW_AT_decl_file    DW_FORM_data1
+    DW_AT_decl_line    DW_FORM_data1
+    DW_AT_prototyped   DW_FORM_flag_present
+    DW_AT_low_pc       DW_FORM_addr
+    DW_AT_high_pc      DW_FORM_data8
+    DW_AT_frame_base   DW_FORM_exprloc
+    DW_AT_GNU_all_tail_call_sites DW_FORM_flag_present
+    DW_AT value: 0     DW_FORM value: 0
+   4      DW_TAG_formal_parameter    [no children]
+    DW_AT_name         DW_FORM_string
+    DW_AT_decl_file    DW_FORM_data1
+    DW_AT_decl_line    DW_FORM_data1
+    DW_AT_type         DW_FORM_ref4
+    DW_AT_location     DW_FORM_exprloc
+    DW_AT value: 0     DW_FORM value: 0
+   5      DW_TAG_subprogram    [has children]
+    DW_AT_external     DW_FORM_flag_present
+    DW_AT_name         DW_FORM_strp
+    DW_AT_decl_file    DW_FORM_data1
+    DW_AT_decl_line    DW_FORM_data1
+    DW_AT_type         DW_FORM_ref4
+    DW_AT_declaration  DW_FORM_flag_present
+    DW_AT value: 0     DW_FORM value: 0
+   6      DW_TAG_unspecified_parameters    [no children]
+    DW_AT value: 0     DW_FORM value: 0
+
+Contents of the .debug_aranges section:
+
+  Length:                   44
+  Version:                  2
+  Offset into .debug_info:  0x0
+  Pointer Size:             8
+  Segment Size:             0
+
+    Address            Length
+    0000000000000000 0000000000000019 
+    0000000000000000 0000000000000000 
+
+Raw dump of debug contents of section .debug_line:
+
+  Offset:                      0x0
+  Length:                      72
+  DWARF Version:               2
+  Prologue Length:             47
+  Minimum Instruction Length:  1
+  Initial value of 'is_stmt':  1
+  Line Base:                   -5
+  Line Range:                  14
+  Opcode Base:                 13
+
+ Opcodes:
+  Opcode 1 has 0 args
+  Opcode 2 has 1 args
+  Opcode 3 has 1 args
+  Opcode 4 has 1 args
+  Opcode 5 has 1 args
+  Opcode 6 has 0 args
+  Opcode 7 has 0 args
+  Opcode 8 has 0 args
+  Opcode 9 has 1 args
+  Opcode 10 has 0 args
+  Opcode 11 has 0 args
+  Opcode 12 has 1 args
+
+ The Directory Table (offset 0x1b):
+  1	src
+
+ The File Name Table (offset 0x20):
+  Entry	Dir	Time	Size	Name
+  1	1	0	0	api3.c
+  2	0	0	0	<built-in>
+
+ Line Number Statements:
+  [0x00000039]  Extended opcode 2: set Address to 0x0
+  [0x00000044]  Special opcode 8: advance Address by 0 to 0x0 and Line by 3 to 4
+  [0x00000045]  Special opcode 160: advance Address by 11 to 0xb and Line by 1 to 5
+  [0x00000046]  Special opcode 174: advance Address by 12 to 0x17 and Line by 1 to 6
+  [0x00000047]  Advance PC by 2 to 0x19
+  [0x00000049]  Extended opcode 1: End of Sequence
+
+
+Contents of the .debug_str section:
+
+  0x00000000 7372632f 61706933 2e630061 70693300 src/api3.c.api3.
+  0x00000010 474e5520 4320342e 382e3220 2d6d7475 GNU C 4.8.2 -mtu
+  0x00000020 6e653d67 656e6572 6963202d 6d617263 ne=generic -marc
+  0x00000030 683d7838 362d3634 202d6720 2d665049 h=x86-64 -g -fPI
+  0x00000040 43202d66 73746163 6b2d7072 6f746563 C -fstack-protec
+  0x00000050 746f7200 70757473 002f686f 6d652f6a tor.puts./home/j
+  0x00000060 756e6865 652e6368 6f2f776f 726b2f73 unhee.cho/work/s
+  0x00000070 74756267 656e2f74 6573742f 73616d70 tubgen/test/samp
+  0x00000080 6c652d6c 696200                     le-lib.
+
+Contents of the .eh_frame section:
+
+00000000 0000000000000014 00000000 CIE
+  Version:               1
+  Augmentation:          "zR"
+  Code alignment factor: 1
+  Data alignment factor: -8
+  Return address column: 16
+  Augmentation data:     1b
+
+  DW_CFA_def_cfa: r7 (rsp) ofs 8
+  DW_CFA_offset: r16 (rip) at cfa-8
+  DW_CFA_nop
+  DW_CFA_nop
+
+00000018 000000000000001c 0000001c FDE cie=00000000 pc=0000000000000000..0000000000000019
+  DW_CFA_advance_loc: 1 to 0000000000000001
+  DW_CFA_def_cfa_offset: 16
+  DW_CFA_offset: r6 (rbp) at cfa-16
+  DW_CFA_advance_loc: 3 to 0000000000000004
+  DW_CFA_def_cfa_register: r6 (rbp)
+  DW_CFA_advance_loc: 20 to 0000000000000018
+  DW_CFA_def_cfa: r7 (rsp) ofs 8
+  DW_CFA_nop
+  DW_CFA_nop
+  DW_CFA_nop
+

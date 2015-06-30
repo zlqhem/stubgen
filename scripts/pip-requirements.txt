@@ -1,0 +1,7 @@
+cov-core==1.15.0
+coverage==3.7.1
+py==1.4.29
+pyelftools==0.23
+pytest==2.7.2
+pytest-cov==1.8.1
+wheel==0.24.0
