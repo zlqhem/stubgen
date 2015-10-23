@@ -1,4 +1,6 @@
 from operator import add
+from utils import replicate
+from utils import concatMap
 
 def empty():
 	return []
@@ -16,31 +18,23 @@ def comma():
 	return [","]
 
 def block(doc):
-	return ["{"] + newline() + nest(4, doc) + newline() + ["}"]
+	return ["{"] + nest(4, newline() + doc) + newline() + ["}"]
 
-def nest(width, doc):
-	return [' ' for x in range(0, width)] + doc
+# indents a document by inserting i spaces after every newline.
+def nest(i, doc):
+	return map(lambda elm: nestl(i, elm), doc)
 
-def group(doc):
-	return [doc]
+def nestl(i, doc):
+	return concatMap(lambda x: indent(i, x), doc)
+
+def indent(i, c):
+	if c == '\n':
+		return [c] + replicate(i, ' ')
+	else:
+		return [c]
 
 # FIXME
 # int -> Doc -> Layout
 def pretty(width, doc):
 	return reduce(add, doc, "")
-
-# intersperse(["a","b","c"], "_") == ["a","_","b","_","c"]
-# intersperse(['struct', 'field'], [" "]) == ['struct', [' '], 'field']]
-def intersperse(xs, delimiter):
-	if len(xs) == 0:
-		return []
-
-	iter_xs = iter(xs)
-	first = next(iter_xs) 
-	r = [first]
-
-	for x in iter_xs:
-		r += [delimiter]
-		r += [x]
-	return r
 

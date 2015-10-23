@@ -22,7 +22,7 @@ help:
 # run unit tests
 .PHONY: test
 test:
-	@py.test tests 
+	@py.test -s tests 
 
 # generate report files
 .PHONY: report
