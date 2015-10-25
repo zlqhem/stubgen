@@ -12,7 +12,15 @@ To install the packages:
     $ sudo apt-get install python-pip 
     $ sudo pip install virtualenv
 
+To install virtual development environment:
+
+	$ sudo scripts/prerequisites.sh
+
 # Development
+To activte the virtual development environment:
+
+	$ source venv/bin/activate
+
 To see build commands:
 
     $ make help
