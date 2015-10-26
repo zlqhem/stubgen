@@ -450,9 +450,6 @@ def mdoc_empty(cv):
 
 # cv -> M doc
 def mdoc_typedef(cv):
-	typedef_functionpointer=  mdoc_typedef_fp(cv)
-	typedef_normal = mdoc_typedef_normal(cv)
-
 	doc = orElse(mdoc_typedef_fp(cv),
 		         mdoc_typedef_normal(cv))
 	return doc
@@ -460,8 +457,9 @@ def mdoc_typedef(cv):
 # cv -> M doc
 def mdoc_typedef_normal(cv):
 	return bind(mdoc_name(cv), lambda name:
-		   bind(mdoc_typeref(cv), lambda srcType:
-		   unit(P.text("typedef ")  + srcType + P.space() + name + P.text(";"))))
+		   bind(mdie_type(cv), lambda die_type:
+		   bind(mdoc_typeref(die_type), lambda srcType:
+		   unit(P.text("typedef ")  + srcType + P.space() + name + P.text(";")))))
 
 # Abstraction LEVEL
 # - doc, M doc
@@ -492,7 +490,7 @@ def mdoc_typedef_fp(cv):
 	return bind(m_returnType, lambda ret:
 		   bind(m_docParams, lambda params:
 		   bind(mdoc_name(cv), lambda name:
-		   unit(P.text("typedef ") + ret + P.text(" (*") + name + P.text(") ") + params))))
+		   unit(P.text("typedef ") + ret + P.text(" (*") + name + P.text(") ") + P.text('(') + params + P.text(');')))))
 
 # cv -> M doc 
 # FIXME: typeref of type of cv
@@ -521,6 +519,8 @@ def mdoc_typeref(cv):
 	(_, die) = cv
 	if die.tag in genDoc:
 		return genDoc[die.tag](cv)
+	else:
+		return error('no support for ' + die.tag)
 
 # cv -> M cv
 def mdie_type((cu, die)):
