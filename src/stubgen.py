@@ -15,17 +15,17 @@ import pretty as P
 
 '''
  WIP:
- * use Monad to lower complexity
  * void XXX_StubReturns (<Type of XXX function> value)
 
  TODO: 
- * distinguish naming of mdoc from DIE and from Doc
  * handle union type
  * DW_TAG_unspecified_parameters
  * stub initialization for each test case run
  * adjust level of abstraction 
 
  DONE:
+ * use Monad to lower complexity
+ * distinguish naming of mdoc from DIE and from Doc
  * typedef <type> (*STUB_XXX_CALLBACK) (param-list, int stubCallCount)
  * static STUBGEN_XXX_CALLBACK s_callback_XXX = 0;
  * void XXX_StubWithCallback (STUBGEN_XXX_CALLBACK cb)
@@ -33,12 +33,19 @@ import pretty as P
  * handle DW_TAG_subroutine_type has no DW_AT_type attr for function pointer
 
 '''
+# Abstraction LEVEL
+# - doc, M doc
+# - cv, M cv
+#
+# transfomation: cv -> M cv ->* M doc
+#   phase 1. cv -> M cv			# lift function
+#   phase 2. M cv -> M cv		# ?
+#   phase 3. M cv -> M doc		# monadic transformer
 
 # =------------------------------------------------
 # monad
 # =------------------------------------------------
 # bind(mv, mf) -> mv
-#'''
 # (a -> b) -> F  a -> F b
 def fmap(f, mval):
 	return bind(mval, lambda a: unit(f(a)))
@@ -107,10 +114,15 @@ def chain(v, fs):
 # string -> string -> [string]
 def generate_stubs_from_staticlib(libpath, outdir='./'):
 	ar = arpy.Archive(libpath)
-	return [doc2file(doc, get_stub_path(libpath + '-' + f.header.name, outdir))
-			for f in ar
-				for doc in generate_docs_from_stream(f.header.name, f)]
+	for f in ar:
+		mdocs = generate_docs_from_stream(f.header.name, f)
+		# M [doc] -> M [string]
+		mval = fmap(lambda docs:
+					[doc2file(doc, get_stub_path(libpath + '-' + f.header.name, outdir)) for doc in docs] , mdocs)
+		return value(mval)
+	return []
 
+# .o | .so
 # string -> string -> [string]
 def generate_stubs_from_bin(binpath, outdir='./'):
 	m_files = bind(generate_docs(binpath), lambda docs:
@@ -118,13 +130,6 @@ def generate_stubs_from_bin(binpath, outdir='./'):
 	m_files = orElse(m_files, unit([]))
 	return value(m_files)
 		  
-
-# .o | .so
-# string -> string -> [string]
-def generate_stubs_from_bin_legacy(binpath, outdir='./'):
-	return [doc2file(doc, get_stub_path(binpath + '-' + str(idx), outdir))
-		for doc,idx in izip(generate_docs(binpath),count(0))]
-
 def get_stub_path(orgPath, outdir='./'):
 	return os.path.join(outdir, os.path.basename(orgPath) + '-stub.c')
 
@@ -158,6 +163,10 @@ def generate_docs_from_stream(filename, fd):
 	
 	docs = [mdoc((cu, cu.get_top_DIE())) for cu in dwarfinfo.iter_CUs()]
 	return sequence(docs)
+
+# --—------—-----------------------------------------------------------
+# start of cv -> M doc
+# --—------—-----------------------------------------------------------
 
 # cv -> M doc
 def mdoc(cv):
@@ -221,7 +230,6 @@ def mdoc_structure_type((cu, die)):
 	return bind(mdoc_name(cv), lambda name:
 		   bind(mdoc_decl_function_struct_type_getter(cv), lambda struct_getter:
 		   bind(unit(die.iter_children()), lambda members:
-		   #bind(unit(P.block(intersperse([mdoc_member((cu, member)) for member in members], P.newline()))), lambda docMembers:
 		   bind(sequence([mdoc_member((cu, member)) for member in members]), lambda docMembers:
 		   unit(P.text("struct ") + name + P.space() + P.block(intersperse(docMembers, P.newline())) + P.text(";") + P.newline() + struct_getter)))))
 
@@ -375,12 +383,6 @@ def mdoc_subprogram_legacy(cv):
 	setter_function = doc_decl_function(P.text('void'), setter, setter_param, setter_body)
 	return intersperse([decl_typedef_callback, decl_var_callback_fp, stub_function, setter_function], P.newline()) + P.newline() 
 
-def doc_stmt_return(doc):
-	if doc == None:
-		return P.empty()
-	else:
-		return P.text("return ") + doc + P.text(";")
-
 # typeDie = None | DIE of type
 # FIXME: how about const type?
 # cv -> M doc
@@ -398,12 +400,124 @@ def mdoc_exp_call_default_type_value(cv):
 	return bind(mdoc_diename((cu, originType)), lambda name:
 		   unit(doc_exp_function_call(P.text('default_value_') + name, [])))
 
+# typedef statement of function pointer 
+# params
+# - returnType: Doc
+# - params: [Doc]
+# - typedefName: Doc
+def mkDoc_decl_typedef_fp(returnType, params, typedefName):
+	return P.text("typedef ") + returnType + P.text("(*") + typedefName + P.text(")") + P.text("(") + intersperse(params, P.text(', ')) + P.text(");")
+
+# cv -> M doc
+def mdoc_empty(cv):
+	return unit(P.empty())
+
+# cv -> M doc
+def mdoc_typedef(cv):
+	doc = orElse(mdoc_typedef_fp(cv),
+		         mdoc_typedef_normal(cv))
+	return doc
+
+# cv -> M doc
+def mdoc_typedef_normal(cv):
+	return bind(mdoc_name(cv), lambda name:
+		   bind(mdie_type(cv), lambda die_type:
+		   bind(mdoc_typeref(die_type), lambda srcType:
+		   unit(P.text("typedef ")  + srcType + P.space() + name + P.text(";")))))
+
+# cv -> M doc
+#	e.g) typedef void (*STUBGEN_api1_CALLBACK) ();
+#	cv.type == DW_TAG_typedef
+#	cv.type.type == DW_TAG_pointer_type
+#	cv.type.type.type == DW_TAG_subroutine_type
+def mdoc_typedef_fp(cv):
+	m_subroutine = chain(unit(cv), [mdie_type, mdie_type])
+
+	m_params = bind(m_subroutine, lambda ((cu, die)):
+		sequence([mdoc_formalparameter((cu, child)) for child in die.iter_children()])
+	)
+	m_docParams = bind(m_params, lambda docs: unit(intersperse(docs, P.comma())))
+	m_returnType = chain(m_subroutine, [mdie_type, mdoc_typeref])
+	
+	return bind(m_returnType, lambda ret:
+		   bind(m_docParams, lambda params:
+		   bind(mdoc_name(cv), lambda name:
+		   unit(P.text("typedef ") + ret + P.text(" (*") + name + P.text(") ") + P.text('(') + params + P.text(');')))))
+
+# cv -> M doc 
+def mdoc_name((cu, die)):
+	if 'DW_AT_name' not in die.attributes:
+		return error(die.tag + ' does not have DW_AT_name attribute')
+	return unit(P.text(die.attributes['DW_AT_name'].value))
+
+# cv -> M doc 
+# FIXME: typeref of type of cv
+def mdoc_typeref(cv):
+	genDoc = {
+		'DW_TAG_structure_type': 
+			lambda cv: bind(mdoc_name(cv), lambda name:
+					   unit(P.text("struct ") + name)),
+		'DW_TAG_typedef': mdoc_name,
+		'DW_TAG_union_type': mdoc_name,
+		'DW_TAG_base_type': mdoc_name,
+		'DW_TAG_const_type': 
+			lambda cv: bind(mdie_type(cv), lambda die_type: 
+					   bind(mdoc_typeref(die_type), lambda typeref:
+					   unit(P.text("const ") + typeref))),
+		'DW_TAG_pointer_type':
+			lambda cv: bind(mdie_type(cv), lambda die_type:
+					   bind(mdoc_typeref(die_type), lambda typeref:
+					   unit(typeref + P.text("*"))))
+	}
+
+	# FIXME: which case?
+	if (cv) == (None):
+		return unit(P.text("void"))
+
+	(_, die) = cv
+	if die.tag in genDoc:
+		return genDoc[die.tag](cv)
+	else:
+		return error('no support for ' + die.tag)
+
+# --—------—-----------------------------------------------------------
+# end of cv -> M doc
+# --—------—-----------------------------------------------------------
 # cv -> cv
 def get_origin_type(cv):
 	(cu, die) = cv
 	if die.tag == 'DW_TAG_typedef':
 		return get_origin_type(cu, get_die_type(cu, die))
 	return die
+
+# cv -> M cv
+def mdie_type((cu, die)):
+	if 'DW_AT_type' not in die.attributes:
+		m_name = orElse(mdoc_name((cu, die)), unit(P.text("Nil")))
+		name = value(m_name)[0]
+		return error(name + ':' + die.tag + ' does not have DW_AT_type attribute')
+	offset = die.attributes['DW_AT_type'].value
+	return get_die_by_offset(cu, offset)
+
+# cu -> int -> M cv
+def get_die_by_offset(cu, offset):
+	target = cu.cu_offset + offset
+	for die in cu.iter_DIEs():
+		if die.offset == target:
+			cv = (cu, die)
+			return unit(cv)
+	return error('cannot find the offset (' + offset + ')')
+
+# --—------—-----------------------------------------------------------
+# start of doc -> doc
+# --—------—-----------------------------------------------------------
+
+# doc -> doc
+def doc_stmt_return(doc):
+	if doc == None:
+		return P.empty()
+	else:
+		return P.text("return ") + doc + P.text(";")
 
 # function_name: Doc
 # argList: [Doc]
@@ -436,115 +550,9 @@ def doc_decl_static_var(typeName, name, value):
 def doc_decl_var(typeName, name, value):
 	return typeName + P.space() + name + P.text(" = ") + value + P.text(";")
 
-# typedef statement of function pointer 
-# params
-# - returnType: Doc
-# - params: [Doc]
-# - typedefName: Doc
-def mkDoc_decl_typedef_fp(returnType, params, typedefName):
-	return P.text("typedef ") + returnType + P.text("(*") + typedefName + P.text(")") + P.text("(") + intersperse(params, P.text(', ')) + P.text(");")
-
-# cv -> M doc
-def mdoc_empty(cv):
-	return unit(P.empty())
-
-# cv -> M doc
-def mdoc_typedef(cv):
-	doc = orElse(mdoc_typedef_fp(cv),
-		         mdoc_typedef_normal(cv))
-	return doc
-
-# cv -> M doc
-def mdoc_typedef_normal(cv):
-	return bind(mdoc_name(cv), lambda name:
-		   bind(mdie_type(cv), lambda die_type:
-		   bind(mdoc_typeref(die_type), lambda srcType:
-		   unit(P.text("typedef ")  + srcType + P.space() + name + P.text(";")))))
-
-# Abstraction LEVEL
-# - doc, M doc
-# - cv, M cv
-#
-# transfomation: cv -> M cv ->* M doc
-#   phase 1. cv -> M cv			# lift function
-#   phase 2. M cv -> M cv		# ?
-#   phase 3. cv -> doc			# pure function
-#   phase 4. M cv -> M doc		# monadic transformer
-#
-#   M cv -> M doc
-
-# cv -> M doc
-#	e.g) typedef void (*STUBGEN_api1_CALLBACK) ();
-#	cv.type == DW_TAG_typedef
-#	cv.type.type == DW_TAG_pointer_type
-#	cv.type.type.type == DW_TAG_subroutine_type
-def mdoc_typedef_fp(cv):
-	m_subroutine = chain(unit(cv), [mdie_type, mdie_type])
-
-	m_params = bind(m_subroutine, lambda ((cu, die)):
-		sequence([mdoc_formalparameter((cu, child)) for child in die.iter_children()])
-	)
-	m_docParams = bind(m_params, lambda docs: unit(intersperse(docs, P.comma())))
-	m_returnType = chain(m_subroutine, [mdie_type, mdoc_typeref])
-	
-	return bind(m_returnType, lambda ret:
-		   bind(m_docParams, lambda params:
-		   bind(mdoc_name(cv), lambda name:
-		   unit(P.text("typedef ") + ret + P.text(" (*") + name + P.text(") ") + P.text('(') + params + P.text(');')))))
-
-# cv -> M doc 
-# FIXME: typeref of type of cv
-def mdoc_typeref(cv):
-	genDoc = {
-		'DW_TAG_structure_type': 
-			lambda cv: bind(mdoc_name(cv), lambda name:
-					   unit(P.text("struct ") + name)),
-		'DW_TAG_typedef': mdoc_name,
-		'DW_TAG_union_type': mdoc_name,
-		'DW_TAG_base_type': mdoc_name,
-		'DW_TAG_const_type': 
-			lambda cv: bind(mdie_type(cv), lambda die_type: 
-					   bind(mdoc_typeref(die_type), lambda typeref:
-					   unit(P.text("const ") + typeref))),
-		'DW_TAG_pointer_type':
-			lambda cv: bind(mdie_type(cv), lambda die_type:
-					   bind(mdoc_typeref(die_type), lambda typeref:
-					   unit(typeref + P.text("*"))))
-	}
-
-	# FIXME: which case?
-	if (cv) == (None):
-		return unit(P.text("void"))
-
-	(_, die) = cv
-	if die.tag in genDoc:
-		return genDoc[die.tag](cv)
-	else:
-		return error('no support for ' + die.tag)
-
-# cv -> M cv
-def mdie_type((cu, die)):
-	if 'DW_AT_type' not in die.attributes:
-		m_name = orElse(mdoc_name((cu, die)), unit(P.text("Nil")))
-		name = value(m_name)[0]
-		return error(name + ':' + die.tag + ' does not have DW_AT_type attribute')
-	offset = die.attributes['DW_AT_type'].value
-	return get_die_by_offset(cu, offset)
-
-# cv -> M doc 
-def mdoc_name((cu, die)):
-	if 'DW_AT_name' not in die.attributes:
-		return error(die.tag + ' does not have DW_AT_name attribute')
-	return unit(P.text(die.attributes['DW_AT_name'].value))
-
-# cu -> int -> M cv
-def get_die_by_offset(cu, offset):
-	target = cu.cu_offset + offset
-	for die in cu.iter_DIEs():
-		if die.offset == target:
-			cv = (cu, die)
-			return unit(cv)
-	return error('cannot find the offset (' + offset + ')')
+# --—------—-----------------------------------------------------------
+# end of doc -> doc
+# --—------—-----------------------------------------------------------
 
 '''
 def is_static_lib(path):
